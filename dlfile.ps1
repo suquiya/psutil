@@ -1,30 +1,41 @@
 Param (
     [parameter(Mandatory = $true)][String]$url,
-    [bool]$open_folder = $true
+    [Alias('out')][String]$out_filename = $null,
+    [Alias('time')][bool]$timestamp = $true,
+    [Alias('open')][bool]$open_folder = $true
 )
 
 $dl_target_url = $url.Trim();
-$filename = $dl_target_url.Substring($dl_target_url.LastIndexOf('/') + 1);
 
-if ($filename.IndexOf('?') -gt -1) {
-    $filename = $filename.Substring(0, $filename.IndexOf('?'));
+if ($out_filename -ne $null) {
+    $filename = $out_filename.Trim();
+} else {
+    $filename = $dl_target_url.Substring($dl_target_url.LastIndexOf('/') + 1);
+    $extension = "";
+    if ($filename.IndexOf('?') -gt -1) {
+        $filename = $filename.Substring(0, $filename.IndexOf('?'));
+    }
+    if ($filename.LastIndexOf('.') -gt -1) {
+        $extension = $filename.Substring($filename.LastIndexOf('.'));
+        $filename = $filename.Substring(0, $filename.LastIndexOf('.'));
+    }
+
+    if ($filename.Length -eq 0) {
+        $filename = "download";
+    }
+    if ($timestamp) {
+        $now_str = [DateTime]::Now.ToString('yyyyMMddHHmmss');
+        $filename = "${filename}_${now_str}${extension}";
+    }else{
+        $filename = "${filename}${extension}";
+    }
 }
 
-if ($filename.LastIndexOf('.') -gt -1) {
-    $extension = $filename.Substring($filename.LastIndexOf('.'));
-    $filename = $filename.Substring(0, $filename.LastIndexOf('.'));
-}
-
-if ($filename.Length -eq 0) {
-    $filename = "download";
-}
 
 $dl_folder = $env:USERPROFILE;
 $dl_folder = "${dl_folder}\Downloads";
-$now_str = [DateTime]::Now.ToString('yyyyMMddHHmmss');
 
-$filename = "${filename}_${now_str}"
-$dest_path = "${dl_folder}\${filename}${extension}"
+$dest_path = "${dl_folder}\${filename}"
 
 xh $dl_target_url -d -o $dest_path
 
